@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Viral Video Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --hint-color: #707579;
+            --button-color: #3390ec;
+            --button-text: #ffffff;
+            --secondary-bg: #f4f4f5;
+            --card-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Telegram Theme Integration */
+        body.dark {
+            --bg-color: #1c1c1d;
+            --text-color: #ffffff;
+            --hint-color: #aaaaaa;
+            --secondary-bg: #2c2c2e;
+            --card-bg: rgba(44, 44, 46, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            transition: background 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism UI */
+        .container { padding: 15px; padding-bottom: 80px; }
+        
+        .video-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .thumbnail-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #333;
+        }
+
+        .category-badge {
+            position: absolute;
+            top: 10px; left: 10px;
+            background: #ff9500;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .video-info { padding: 15px; }
+        
+        .live-counter {
+            font-size: 13px;
+            color: #ff3b30;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .pulse {
+            width: 8px; height: 8px;
+            background: #ff3b30;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ff3b30;
+            animation: pulse-animation 1.5s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--secondary-bg) 25%, var(--bg-color) 50%, var(--secondary-bg) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Ad System */
+        .ad-btn {
+            width: 100%;
+            background: #ff9500;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .ad-btn.complete { background: var(--button-color); }
+
+        /* Modal */
+        #adModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        .timer-circle {
+            width: 80px; height: 80px;
+            border: 4px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; width: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-item { color: var(--hint-color); text-decoration: none; font-size: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="loader" class="container">
+    <div class="video-card">
+        <div class="thumbnail-container skeleton"></div>
+        <div class="video-info">
+            <div style="height:20px; width:70%; margin-bottom:10px;" class="skeleton"></div>
+            <div style="height:15px; width:40%;" class="skeleton"></div>
+        </div>
+    </div>
+</div>
+
+<div id="main-content" class="container" style="display:none;">
+    <div class="video-card">
+        <div class="thumbnail-container">
+            <span class="category-badge">Viral Only</span>
+            <img src="https://via.placeholder.com/640x360" style="width:100%; display:block;">
+        </div>
+        <div class="video-info">
+            <div class="live-counter">
+                <div class="pulse"></div> <span id="view-count">12.4K</span> Watching Now
+            </div>
+            <h3 style="margin:5px 0;">Leaked Video: Trending Viral Clip 2024</h3>
+            <button class="ad-btn" id="adControlBtn" onclick="startAdProcess()">Watch Ads to Unlock (0/2)</button>
+        </div>
+    </div>
+</div>
+
+<div id="adModal">
+    <h2 id="adStatus">Watching Ad 1/2</h2>
+    <div class="timer-circle" id="timer">15</div>
+    <p>Please wait, do not close...</p>
+</div>
+
+<nav class="bottom-nav">
+    <a href="#" class="nav-item">🏠<br>Home</a>
+    <a href="#" class="nav-item">🔥<br>Trending</a>
+    <a href="#" class="nav-item">👤<br>Profile</a>
+</nav>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Full screen
+
+    // 1. Theme Sync
+    function syncTheme() {
+        document.body.className = tg.colorScheme;
+        tg.setHeaderColor(tg.themeParams.bg_color);
+    }
+    tg.onEvent('themeChanged', syncTheme);
+    syncTheme();
+
+    // 2. View Counter Animation
+    let views = 12400;
+    setInterval(() => {
+        views += Math.floor(Math.random() * 5);
+        document.getElementById('view-count').innerText = (views / 1000).toFixed(1) + 'K';
+    }, 3000);
+
+    // 3. Ad System Logic
+    let adsWatched = 0;
+    function startAdProcess() {
+        if (adsWatched >= 2) {
+            tg.openLink('https://your-video-link.com'); // ভিডিওর লিংক এখানে দিন
+            return;
+        }
+
+        const modal = document.getElementById('adModal');
+        const timerEl = document.getElementById('timer');
+        const statusEl = document.getElementById('adStatus');
+        
+        modal.style.display = 'flex';
+        let timeLeft = 15;
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                adsWatched++;
+                modal.style.display = 'none';
+                updateButton();
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        }, 1000);
+    }
+
+    function updateButton() {
+        const btn = document.getElementById('adControlBtn');
+        if (adsWatched === 1) {
+            btn.innerText = "Watch Ad (1/2) - Next";
+        } else if (adsWatched >= 2) {
+            btn.innerText = "🔓 Open Video Now";
+            btn.classList.add('complete');
+            tg.MainButton.setText("OPEN VIDEO").show().onClick(() => {
+                tg.openLink('https://your-video-link.com');
+            });
+        }
+    }
+
+    // 4. Skeleton Reveal
+    setTimeout(() => {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+    }, 2000);
+
+    // BackButton Integration
+    tg.BackButton.show();
+    tg.onEvent('backButtonClicked', () => {
+        tg.close();
+    });
+
+</script>
+</body>
+</html>
