@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Viral Video Bot</title>
+    <title>Home Hub - Viral Video</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -110,14 +110,14 @@
         .skeleton { background: linear-gradient(90deg, var(--secondary-bg) 25%, var(--bg-color) 50%, var(--secondary-bg) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        /* Bottom Nav Hidden as requested */
-        .bottom-nav { display: none; }
+        /* Bottom Nav Hidden */
+        .bottom-nav { display: none !important; }
     </style>
 </head>
 <body>
 
 <header class="header">
-    <h1>Viral Hub</h1>
+    <h1>Home Hub</h1>
 </header>
 
 <div id="loader" class="container">
@@ -149,9 +149,10 @@
     tg.onEvent('themeChanged', syncTheme);
     syncTheme();
 
+    // Configurations
     const SHEET_ID = '1I4uaJl9PCHoUC2rXuesgzorVbnZWMDoCTOL_dPuE_EQ'; 
     const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
-    const BOT_USERNAME = "WebVideov2_bot"; 
+    const BOT_USERNAME = "HOME_HUB_aBOT"; 
 
     let adsWatchedCount = 0;
     let targetLink = "";
@@ -166,7 +167,7 @@
             const loader = document.getElementById('loader');
             
             if (!data || data.length === 0) {
-                loader.innerHTML = "<p style='text-align:center; padding:20px;'>No videos found. Add data to your Google Sheet.</p>";
+                loader.innerHTML = "<p style='text-align:center; padding:20px;'>No videos found.</p>";
                 return;
             }
 
@@ -201,28 +202,26 @@
             container.style.display = 'block';
         } catch (err) {
             console.error("Sheet Error:", err);
-            document.getElementById('loader').innerHTML = "<p style='text-align:center; color:red; padding:20px;'>Failed to load videos. Check your internet or Sheet settings.</p>";
+            document.getElementById('loader').innerHTML = "<p style='text-align:center; color:red; padding:20px;'>Failed to load videos.</p>";
         }
     }
 
     function sharePost(title) {
-        const webLink = window.location.href;
-        const botLink = `https://t.me/${BOT_USERNAME}`;
-        const message = `🔥 *${title}*\n\n📺 ভিডিওটি দেখতে নিচের লিঙ্কে ক্লিক করুন:\n🌐 ${webLink}\n\n🤖 আমাদের বটের লিঙ্ক:\n🔗 ${botLink}`;
+        // বটের মাধ্যমে সরাসরি ওয়েব অ্যাপ খোলার লিঙ্ক
+        const directAppLink = `https://t.me/${BOT_USERNAME}/app`;
+        const message = `🔥 *${title}*\n\n📺 ভিডিওটি সরাসরি দেখতে নিচের লিঙ্কে ক্লিক করুন:\n🔗 ${directAppLink}`;
         
         if (navigator.share) {
             navigator.share({
                 title: title,
                 text: message
-            }).catch(console.error);
+            }).catch(() => {
+                // ব্রাউজারে শেয়ার সাপোর্ট না করলে সরাসরি টেলিগ্রামে শেয়ার ওপেন হবে
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(directAppLink)}&text=${encodeURIComponent(message)}`, '_blank');
+            });
         } else {
-            const el = document.createElement('textarea');
-            el.value = message;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            tg.showAlert("লিঙ্ক কপি করা হয়েছে! এখন শেয়ার করুন।");
+            // পিসি বা পুরনো ব্রাউজারের জন্য ব্যাকআপ
+            window.open(`https://t.me/share/url?url=${encodeURIComponent(directAppLink)}&text=${encodeURIComponent(message)}`, '_blank');
         }
     }
 
