@@ -82,7 +82,6 @@
         .pulse { width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; animation: pulse-animation 1.5s infinite; }
         @keyframes pulse-animation { 0% { transform: scale(0.95); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.7; } }
 
-        /* Actions Row Layout */
         .actions-row {
             display: flex;
             gap: 10px;
@@ -111,7 +110,7 @@
         .skeleton { background: linear-gradient(90deg, var(--secondary-bg) 25%, var(--bg-color) 50%, var(--secondary-bg) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        /* Bottom Nav Hidden */
+        /* Bottom Nav Hidden as requested */
         .bottom-nav { display: none; }
     </style>
 </head>
@@ -145,14 +144,14 @@
 
     function syncTheme() {
         document.body.className = tg.colorScheme;
-        tg.setHeaderColor(tg.themeParams.bg_color);
+        tg.setHeaderColor(tg.themeParams.bg_color || '#ffffff');
     }
     tg.onEvent('themeChanged', syncTheme);
     syncTheme();
 
     const SHEET_ID = '1I4uaJl9PCHoUC2rXuesgzorVbnZWMDoCTOL_dPuE_EQ'; 
     const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
-    const BOT_USERNAME = "Your_Bot_Username"; // এখানে আপনার বটের ইউজারনেম বসান (যেমন: MyViralBot)
+    const BOT_USERNAME = "WebVideov2_bot"; 
 
     let adsWatchedCount = 0;
     let targetLink = "";
@@ -160,26 +159,34 @@
     async function fetchVideos() {
         try {
             const response = await fetch(SHEET_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
+            
             const container = document.getElementById('video-container');
-            container.innerHTML = '';
+            const loader = document.getElementById('loader');
+            
+            if (!data || data.length === 0) {
+                loader.innerHTML = "<p style='text-align:center; padding:20px;'>No videos found. Add data to your Google Sheet.</p>";
+                return;
+            }
 
+            container.innerHTML = '';
             data.reverse().forEach((post) => {
                 const randomViews = (Math.random() * (20 - 5) + 5).toFixed(1) + 'K';
                 const videoHTML = `
                     <div class="video-card">
                         <div class="thumbnail-container">
                             <span class="category-badge">Viral Only</span>
-                            <img src="${post.ImageURL || 'https://via.placeholder.com/640x360'}" loading="lazy">
+                            <img src="${post.ImageURL || 'https://via.placeholder.com/640x360'}" loading="lazy" onerror="this.src='https://via.placeholder.com/640x360'">
                         </div>
                         <div class="video-info">
                             <div class="live-counter">
                                 <div class="pulse"></div> <span>${randomViews}</span> Watching Now
                             </div>
-                            <h3 style="margin:5px 0; font-size:16px;">${post.Title}</h3>
+                            <h3 style="margin:5px 0; font-size:16px;">${post.Title || 'Untitled Video'}</h3>
                             <div class="actions-row">
                                 <button class="ad-btn" onclick="startAdProcess('${post.VideoURL}', this)">Watch Ads to Unlock (0/2)</button>
-                                <div class="share-btn" onclick="sharePost('${post.Title}')">
+                                <div class="share-btn" onclick="sharePost('${(post.Title || "Viral Video").replace(/'/g, "\\'")}')">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--button-color)">
                                         <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/>
                                     </svg>
@@ -190,27 +197,25 @@
                 container.insertAdjacentHTML('beforeend', videoHTML);
             });
 
-            document.getElementById('loader').style.display = 'none';
+            loader.style.display = 'none';
             container.style.display = 'block';
         } catch (err) {
             console.error("Sheet Error:", err);
+            document.getElementById('loader').innerHTML = "<p style='text-align:center; color:red; padding:20px;'>Failed to load videos. Check your internet or Sheet settings.</p>";
         }
     }
 
     function sharePost(title) {
-        // বর্তমান ওয়েবসাইটের লিঙ্ক এবং বটের লিঙ্ক সহ মেসেজ
         const webLink = window.location.href;
-        const botLink = `https://t.me/${@WebVideov2_bot}`;
+        const botLink = `https://t.me/${BOT_USERNAME}`;
         const message = `🔥 *${title}*\n\n📺 ভিডিওটি দেখতে নিচের লিঙ্কে ক্লিক করুন:\n🌐 ${webLink}\n\n🤖 আমাদের বটের লিঙ্ক:\n🔗 ${botLink}`;
         
-        // টেলিগ্রামের ইন-অ্যাপ শেয়ারিং অথবা ডিফল্ট শেয়ার ব্যবহার
         if (navigator.share) {
             navigator.share({
                 title: title,
                 text: message
             }).catch(console.error);
         } else {
-            // কপি করার ব্যাকআপ ব্যবস্থা
             const el = document.createElement('textarea');
             el.value = message;
             document.body.appendChild(el);
